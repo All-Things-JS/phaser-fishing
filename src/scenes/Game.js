@@ -65,6 +65,7 @@ export default class Game extends Phaser.Scene {
     this.load.image("fishing_pole", "assets/fishing_pole.png");
     this.load.image("oven", "assets/oven.png");
     this.load.tilemapTiledJSON("map", "assets/phishing_map.json");
+    this.load.audio("background_music", "assets/background_music.mp3");
     this.#cursors = this.input.keyboard.createCursorKeys();
   }
 
@@ -115,6 +116,7 @@ export default class Game extends Phaser.Scene {
     this.physics.add.collider(this.#player, this.#oven);
 
     this.cameras.main.startFollow(this.#player);
+    this.game.sound.play("background_music", { loop: true, volume: 0.2 });
   }
 
   update() {
