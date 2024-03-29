@@ -19,17 +19,45 @@ export default class Game extends Phaser.Scene {
   /** @type {Phaser.Physics.Arcade.StaticBody} */
   #fishing_pole;
 
+  /** @type {HTMLSpanElement} */
+  #timer;
+
+  /** @type {number} */
+  #current_time;
+
+  /** @type {number} */
+  #timer_handle;
+
+  #arrow_timer_handle;
+
+  #show_arrow_timer;
+
   /** @type {Phaser.Physics.Arcade.StaticBody} */
   #oven;
 
   /** @type {Phaser.Types.Input.Keyboard.CursorKeys}*/
   #cursors;
 
+  #arrow_handler;
+
+  #arrow_clicked;
+
+  #fishing;
+
   constructor() {
     super("game");
   }
 
-  init() {}
+  init() {
+    this.#fishing = false;
+    this.#arrow_clicked = 0;
+    this.#arrow_handler = () => {
+      if (this.#showingArrow()) {
+        this.#resetArrow();
+        this.#arrow_clicked += 1;
+      }
+    };
+  }
 
   preload() {
     this.load.image("tilemap", "assets/tilemap.png");
@@ -76,6 +104,13 @@ export default class Game extends Phaser.Scene {
       this.#arrow_element,
     );
 
+    this.#timer = document.createElement("span");
+    this.add.dom(
+      this.#arrow_object.x + this.#arrow_object.width,
+      this.#arrow_object.y,
+      this.#timer,
+    );
+
     this.physics.add.collider(this.#player, this.#fishing_pole);
     this.physics.add.collider(this.#player, this.#oven);
 
@@ -99,22 +134,27 @@ export default class Game extends Phaser.Scene {
     if (
       this.#nextToFishingPole() &&
       !this.#hasCaughtFish() &&
+      !this.#fishing &&
       this.#cursors.space.isDown
     ) {
-      this.#showArrow();
+      this.#fishing = true;
+      let time = 10;
+
+      if (this.#hasCookedFish()) {
+        time += 5;
+        this.#resetInventory();
+      }
+
+      this.#cursors.up.addListener("down", this.#arrow_handler);
+      this.#startTimer(time, this.#resetFishing.bind(this));
     }
 
-    if (this.#showingArrow() && !this.#nextToFishingPole()) {
-      this.#resetArrow();
+    if (this.#fishing && !this.#nextToFishingPole()) {
+      this.#resetFishing();
     }
 
-    if (
-      this.#showingArrow() &&
-      this.#nextToFishingPole() &&
-      !this.#hasCaughtFish() &&
-      this.#cursors.up.isDown
-    ) {
-      this.#resetArrow();
+    if (this.#arrow_clicked === 3) {
+      this.#resetFishing();
       this.#catchFish();
     }
 
@@ -125,10 +165,46 @@ export default class Game extends Phaser.Scene {
     ) {
       this.#cookFish();
     }
+  }
 
-    if (this.#hasCookedFish() && this.#cursors.shift.isDown) {
-      this.#resetInventory();
-    }
+  #startTimer(time, timedout) {
+    this.#current_time = time;
+    this.#timer.innerHTML = this.#current_time;
+    this.#timer_handle = setInterval(() => {
+      if (!this.#show_arrow_timer && !this.#showingArrow()) {
+        this.#show_arrow_timer = setTimeout(
+          () => {
+            this.#showArrow();
+            clearTimeout(this.#show_arrow_timer);
+            this.#show_arrow_timer = undefined;
+          },
+          Phaser.Math.RND.between(1500, 3000),
+        );
+      }
+
+      this.#current_time -= 1;
+
+      if (this.#current_time === 0) {
+        timedout();
+        this.#resetTimer();
+        return;
+      }
+
+      this.#timer.innerHTML = this.#current_time;
+    }, 1000);
+  }
+
+  #resetFishing() {
+    this.#cursors.up.removeListener("down", this.#arrow_handler);
+    this.#arrow_clicked = 0;
+    this.#resetArrow();
+    this.#resetTimer();
+    this.#fishing = false;
+  }
+
+  #resetTimer() {
+    clearInterval(this.#timer_handle);
+    this.#timer.innerHTML = "";
   }
 
   #nextToFishingPole() {
@@ -163,6 +239,10 @@ export default class Game extends Phaser.Scene {
 
   #showArrow() {
     this.#arrow_element.setAttribute("src", "./assets/arrow_up.png");
+    this.#arrow_timer_handle = setTimeout(
+      this.#resetArrow.bind(this),
+      Phaser.Math.RND.between(500, 1000),
+    );
   }
 
   #catchFish() {
@@ -187,6 +267,7 @@ export default class Game extends Phaser.Scene {
   }
 
   #resetArrow() {
+    clearTimeout(this.#arrow_timer_handle);
     this.#arrow_element = this.#createArrowElement();
     this.#arrow_object.setElement(this.#arrow_element);
   }
