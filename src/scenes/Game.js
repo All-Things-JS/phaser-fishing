@@ -84,11 +84,7 @@ export default class Game extends Phaser.Scene {
 
     this.#oven = this.physics.add.staticSprite(31, 284, "oven");
 
-    this.#player = this.physics.add.sprite(
-      this.#fishing_pole.x - this.#fishing_pole.width,
-      this.#fishing_pole.y,
-      "player",
-    );
+    this.#player = this.physics.add.sprite(240, this.#fishing_pole.y, "player");
     this.#player.body.collideWorldBounds = true;
 
     this.#inventory_element = this.#createInventoryElement();
@@ -197,6 +193,7 @@ export default class Game extends Phaser.Scene {
   }
 
   #resetFishing() {
+    clearTimeout(this.#show_arrow_timer);
     this.#cursors.up.removeListener("down", this.#arrow_handler);
     this.#arrow_clicked = 0;
     this.#resetArrow();
@@ -245,6 +242,7 @@ export default class Game extends Phaser.Scene {
       this.#resetArrow.bind(this),
       Phaser.Math.RND.between(500, 1000),
     );
+    this.#arrow_element.style.visibility = "visible";
   }
 
   #catchFish() {
@@ -278,6 +276,7 @@ export default class Game extends Phaser.Scene {
     const elem = document.createElement("img");
     elem.setAttribute("height", 21);
     elem.setAttribute("width", 21);
+    elem.style.visibility = "hidden";
     return elem;
   }
 
