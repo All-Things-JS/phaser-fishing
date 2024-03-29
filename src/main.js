@@ -5,13 +5,11 @@ export default new Phaser.Game({
   type: Phaser.AUTO,
   width: 200,
   height: 200,
+  zoom: 2,
   scene: Game,
   backgroundColor: "#d9fff9",
   physics: {
     default: "arcade",
-    arcade: {
-      debug: true,
-    },
   },
   parent: "app",
   dom: {
