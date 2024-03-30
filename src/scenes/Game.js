@@ -64,6 +64,10 @@ export default class Game extends Phaser.Scene {
     this.load.image("player", "assets/char_idle.png");
     this.load.image("fishing_pole", "assets/fishing_pole.png");
     this.load.image("oven", "assets/oven.png");
+    this.load.spritesheet("sprites", "assets/tilemap.png", {
+      frameWidth: 21,
+      frameHeight: 21,
+    });
     this.load.tilemapTiledJSON("map", "assets/phishing_map.json");
     this.load.audio("background_music", "assets/background_music.mp3");
     this.#cursors = this.input.keyboard.createCursorKeys();
@@ -84,7 +88,22 @@ export default class Game extends Phaser.Scene {
 
     this.#oven = this.physics.add.staticSprite(31, 284, "oven");
 
-    this.#player = this.physics.add.sprite(240, this.#fishing_pole.y, "player");
+    this.anims.create({
+      key: "walk",
+      frameRate: 7,
+      frames: this.anims.generateFrameNumbers("sprites", {
+        start: 88,
+        end: 89,
+      }),
+      repeat: -1,
+    });
+
+    this.#player = this.physics.add.sprite(
+      240,
+      this.#fishing_pole.y,
+      "sprites",
+    );
+    this.#player.setFrame(79);
     this.#player.body.collideWorldBounds = true;
 
     this.#inventory_element = this.#createInventoryElement();
@@ -117,10 +136,20 @@ export default class Game extends Phaser.Scene {
 
   update() {
     if (this.#cursors.left.isDown) {
+      this.#player.setFlipX(true);
+      if (!this.#player.anims.isPlaying) {
+        this.#player.play("walk");
+      }
       this.#player.setVelocityX(-100);
     } else if (this.#cursors.right.isDown) {
+      this.#player.setFlipX(false);
+      if (!this.#player.anims.isPlaying) {
+        this.#player.play("walk");
+      }
       this.#player.setVelocityX(100);
     } else {
+      this.#player.stop();
+      this.#player.setFrame(79);
       this.#player.setVelocityX(0);
     }
 
@@ -194,6 +223,7 @@ export default class Game extends Phaser.Scene {
 
   #resetFishing() {
     clearTimeout(this.#show_arrow_timer);
+    this.#show_arrow_timer = undefined;
     this.#cursors.up.removeListener("down", this.#arrow_handler);
     this.#arrow_clicked = 0;
     this.#resetArrow();
